@@ -1,0 +1,62 @@
+# Builds the NQ EoTS macOS client modules (cgame_mac, ui_mac) on GitHub's
+# hosted Mac runners, as one universal binary for Intel and Apple Silicon.
+#
+# Runs on its own on every push to the eots-1.0.8 branch and when a version tag
+# (v*) is pushed. Once this file is also on main, it can be started by hand from
+# the repo's Actions tab ("macOS build" -> "Run workflow"). The finished files are
+# attached to the run as a downloadable artifact named "nqeots-macos".
+
+name: macOS build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "eots-1.0.8"
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build-macos:
+    runs-on: macos-14
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Configure (universal x86_64 + arm64, client modules only)
+        run: >
+          cmake -S . -B build_mac
+          -DCMAKE_BUILD_TYPE=Release
+          -DBUILD_SERVER_MOD=OFF
+          -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
+          -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15
+
+      - name: Build
+        run: cmake --build build_mac --config Release -j 4
+
+      - name: Verify modules
+        run: |
+          set -e
+          for m in cgame_mac ui_mac; do
+            f="build_mac/src/$m"
+            test -f "$f" || { echo "missing $f"; exit 1; }
+            file "$f"
+            # Both architectures must be present
+            lipo "$f" -verify_arch x86_64 arm64
+            # The engine looks up these entry points when it loads the module
+            nm -gU "$f" | grep -q " _vmMain$"   || { echo "$m: vmMain not exported"; exit 1; }
+            nm -gU "$f" | grep -q " _dllEntry$" || { echo "$m: dllEntry not exported"; exit 1; }
+          done
+          echo "All macOS modules verified."
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nqeots-macos
+          path: |
+            build_mac/src/cgame_mac
+            build_mac/src/ui_mac
+          if-no-files-found: error

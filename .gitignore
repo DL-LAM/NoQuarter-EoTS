@@ -43,3 +43,4 @@ scratch/
 .svn/
 release/
 __pycache__/
+build_mac/

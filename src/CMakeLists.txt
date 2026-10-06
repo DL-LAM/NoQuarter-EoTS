@@ -29,7 +29,12 @@ endif()
 
 option(BUILD_SERVER_MOD "Build qagame module" ON)
 option(BUILD_CLIENT_MOD "Build cgame and ui modules" ON)
-option(WITH_OMNIBOT     "Build with Omni-bot support" ON)
+if(APPLE)
+    # Omni-bot has no macOS build; macOS is a client platform for NQ EoTS
+    option(WITH_OMNIBOT "Build with Omni-bot support" OFF)
+else()
+    option(WITH_OMNIBOT "Build with Omni-bot support" ON)
+endif()
 option(WITH_LUA         "Build with Lua support" ON)
 option(WITH_HWBAN       "Build with Hardware Ban support" OFF)
 
@@ -61,6 +66,10 @@ else()
         -Wno-unused-variable
         -Wno-deprecated-declarations
         -fvisibility=hidden
+        # NQ declares some shared globals in headers (old C common-symbol style).
+        # GCC 10+ and Apple Clang default to -fno-common, which turns that into
+        # 'multiple definition' link errors. scripts/build_linux.py passes this too.
+        -fcommon
     )
 endif()
 
@@ -137,6 +146,8 @@ if(WITH_LUA)
             PREFIX ""
             OUTPUT_NAME "lua5.1"
         )
+    elseif(APPLE)
+        target_compile_definitions(lua51 PRIVATE LUA_USE_MACOSX)
     elseif(NOT MSVC)
         target_compile_definitions(lua51 PRIVATE LUA_USE_LINUX)
     endif()
@@ -279,6 +290,10 @@ if(BUILD_SERVER_MOD)
         PREFIX ""
         OUTPUT_NAME "qagame${LIB_SUFFIX}${ARCH}"
     )
+    if(APPLE)
+        # [NQ EoTS - macOS]: ET:Legacy loads extension-less "qagame_mac" dylibs
+        set_target_properties(qagame PROPERTIES OUTPUT_NAME "qagame_mac" SUFFIX "")
+    endif()
 endif()
 
 # ==============================================================================
@@ -345,6 +360,10 @@ if(BUILD_CLIENT_MOD)
         PREFIX ""
         OUTPUT_NAME "cgame${LIB_SUFFIX}${ARCH}"
     )
+    if(APPLE)
+        # [NQ EoTS - macOS]: ET:Legacy loads extension-less "cgame_mac" dylibs
+        set_target_properties(cgame PROPERTIES OUTPUT_NAME "cgame_mac" SUFFIX "")
+    endif()
 
     # ==============================================================================
     # UI (User Interface Module)
@@ -375,4 +394,8 @@ if(BUILD_CLIENT_MOD)
         PREFIX ""
         OUTPUT_NAME "ui${LIB_SUFFIX}${ARCH}"
     )
+    if(APPLE)
+        # [NQ EoTS - macOS]: ET:Legacy loads extension-less "ui_mac" dylibs
+        set_target_properties(ui PROPERTIES OUTPUT_NAME "ui_mac" SUFFIX "")
+    endif()
 endif()

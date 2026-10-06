@@ -1690,7 +1690,7 @@ qboolean CGAMEFileExists( void ) {
 	// (the old code always looked for cgame_mp_x86.dll, so a 64-bit listen-server host
 	// could be flagged by the localhost check when only the x64 DLL was present).
 	trap_Cvar_VariableStringBuffer("fs_homepath", homepath, sizeof(homepath));
-#ifdef __MACOS__
+#if defined(__MACOS__) || defined(__APPLE__)
 	Q_strcat(homepath, sizeof(homepath), "/nq/cgame_mac");
 	if ( !FileExists(homepath) ) return qfalse;
 #endif

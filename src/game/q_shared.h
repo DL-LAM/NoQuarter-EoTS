@@ -289,6 +289,26 @@ void Sys_PumpEvents( void );
 
 #endif
 
+//======================= MODERN MACOS DEFINES ==========================
+
+// [NQ EoTS - macOS]: the MACOS_X / __MACOS__ blocks above are for the original
+// PowerPC builds. Current macOS (Intel and Apple Silicon) only defines __APPLE__.
+#if defined(__APPLE__) && !defined(MACOS_X) && !defined(__MACOS__)
+
+#define	MAC_STATIC
+
+#if defined(__arm64__) || defined(__aarch64__)
+	#define	CPUSTRING	"macos-arm64"
+#elif defined(__x86_64__)
+	#define	CPUSTRING	"macos-x86_64"
+#else
+	#define	CPUSTRING	"macos-other"
+#endif
+
+#define	PATH_SEP '/'
+
+#endif
+
 //=============================================================
 
 
@@ -725,7 +745,7 @@ void ByteToDir( int b, vec3_t dir );
 // TODO: We need to activate and profile this finally.
 //
 // note: the arguments must all be variables (no constants)
-#if ( defined __GNUC__ || defined __clang__ ) && ( defined __linux__ || defined __FreeBSD__ )
+#if ( defined __GNUC__ || defined __clang__ ) && ( defined __linux__ || defined __FreeBSD__ || defined __APPLE__ )
 // [NQ 1.3.1 - Math]: glibc sincos() takes double* and writes 8-byte doubles into our 4-byte floats,
 // corrupting AngleVectors() et al. on every Linux build (movement, traces, bullet trajectory).
 #define SinCos(rad,s,c) do { (s) = sinf(rad); (c) = cosf(rad); } while(0)
