@@ -55,6 +55,8 @@ LINUX32_DIR = os.path.join(SOURCE_DIR, "build32", "Release", "linux")
 
 # Where the release is assembled. Defaults to <repo>/release (git-ignored);
 # set NQ_RELEASE_DIR to use another folder.
+# macOS build output (cgame_mac / ui_mac). Copy them here from the Mac build, or set NQ_MAC_DIR.
+MAC_DIR = os.environ.get("NQ_MAC_DIR", os.path.join(SOURCE_DIR, "build_mac", "src"))
 RELEASE_DIR = os.environ.get("NQ_RELEASE_DIR", os.path.join(SOURCE_DIR, "release"))
 # Optional local installs to copy the new build into for testing.
 # Nothing is copied unless these environment variables are set.
@@ -103,6 +105,13 @@ def build_universal_binary_pk3(pk3_path):
             z.write(cgame32_so, "cgame.mp.i386.so")
         if os.path.exists(ui32_so):
             z.write(ui32_so, "ui.mp.i386.so")
+
+        # macOS universal (Intel + Apple Silicon) client modules, if built.
+        # ET:Legacy loads these extension-less names on macOS.
+        for mac_name in ("cgame_mac", "ui_mac"):
+            mac_path = os.path.join(MAC_DIR, mac_name)
+            if os.path.exists(mac_path):
+                z.write(mac_path, mac_name)
     print(f"Built {pk3_path} successfully.")
 
 # 2. Build the unified binary pk3 (nqeots_b_v<ver>.pk3)
@@ -132,6 +141,13 @@ overrides = {
     "ui/menudef2.h": menudef2_h,
     "ui/ingame_vote_map.menu": vote_map_menu,
     "scripts/meyer.shader": meyer_shader,
+    # [NQ EoTS - Options]: ET: Legacy system settings page (kept in the repo, etmain/ui)
+    "ui/options.menu": os.path.join(SOURCE_DIR, "etmain", "ui", "options.menu"),
+    "ui/options_system_etl.menu": os.path.join(SOURCE_DIR, "etmain", "ui", "options_system_etl.menu"),
+    "ui/menus.txt": os.path.join(SOURCE_DIR, "etmain", "ui", "menus.txt"),
+    # Talk balloon (sprites/nq_talk) and buy icon shaders restored from the original NQ file,
+    # merged with the EoTS server-browser filter icon fix
+    "scripts/shaderfix.shader": os.path.join(SOURCE_DIR, "etmain", "scripts", "shaderfix.shader"),
 }
 
 # Add texture fixes (ctf_pool, pool, etc.)
