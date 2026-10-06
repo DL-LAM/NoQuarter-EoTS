@@ -1,0 +1,125 @@
+// NQ EoTS - SYSTEM options for ET: Legacy clients
+//
+// Opened from OPTIONS > SYSTEM when the client is ET: Legacy (ui_nq_etl 1, set in
+// _UI_Init from the engine's etVersion cvar). Vanilla 2.60b clients keep the original
+// options_system menu. Written for NQ EoTS; uses only ET: Legacy engine cvar names.
+//
+// Settings the engine only applies after a restart (CVAR_LATCH) are edited through
+// ui_etl_* copies: filled on open, copied back by APPLY, which then restarts video and
+// sound (in ET: Legacy, snd_restart also performs a vid_restart). BACK/ESC discards them.
+// Everything else takes effect immediately.
+
+#include "ui/menudef2.h"
+
+// Defines //
+#define WINDOW_X		16
+#define WINDOW_Y		16
+#define WINDOW_WIDTH	608
+#define WINDOW_HEIGHT	300
+#define GROUP_NAME		"grpOptionsSystemETL"
+
+// Macros //
+#include "ui/menumacros2.h"
+
+// Layout //
+#define COL_W			.5*(WINDOW_WIDTH-18)
+#define LEFT_X			6
+#define RIGHT_X			(12+COL_W)
+#define ROW(n)			(18+12*(n))
+
+#define DISP_Y			32
+#define DISP_H			(ROW(8)+4)
+#define AUDIO_Y			(DISP_Y+DISP_H+4)
+#define AUDIO_H			(ROW(3)+4)
+#define GFX_Y			32
+#define GFX_H			(ROW(7)+4)
+#define NET_Y			(GFX_Y+GFX_H+4)
+#define NET_H			(ROW(3)+4)
+#define NOTE_Y			(AUDIO_Y+AUDIO_H+8)
+
+#define COPY_TO_UI		copycvar r_mode ui_etl_r_mode ;										\
+						copycvar r_customwidth ui_etl_r_customwidth ;						\
+						copycvar r_customheight ui_etl_r_customheight ;						\
+						copycvar r_fullscreen ui_etl_r_fullscreen ;							\
+						copycvar r_noborder ui_etl_r_noborder ;								\
+						copycvar r_swapInterval ui_etl_r_swapInterval ;						\
+						copycvar s_khz ui_etl_s_khz ;										\
+						copycvar r_picmip ui_etl_r_picmip ;									\
+						copycvar r_ext_texture_filter_anisotropic ui_etl_r_aniso ;			\
+						copycvar r_ext_multisample ui_etl_r_ext_multisample ;				\
+						copycvar r_detailtextures ui_etl_r_detailtextures
+
+#define COPY_FROM_UI	copycvar ui_etl_r_mode r_mode ;										\
+						copycvar ui_etl_r_customwidth r_customwidth ;						\
+						copycvar ui_etl_r_customheight r_customheight ;						\
+						copycvar ui_etl_r_fullscreen r_fullscreen ;							\
+						copycvar ui_etl_r_noborder r_noborder ;								\
+						copycvar ui_etl_r_swapInterval r_swapInterval ;						\
+						copycvar ui_etl_s_khz s_khz ;										\
+						copycvar ui_etl_r_picmip r_picmip ;									\
+						copycvar ui_etl_r_aniso r_ext_texture_filter_anisotropic ;			\
+						copycvar ui_etl_r_ext_multisample r_ext_multisample ;				\
+						copycvar ui_etl_r_detailtextures r_detailtextures
+
+// System Menu (ET: Legacy) //
+menuDef {
+	name		"options_system_etl"
+	visible		0
+	fullscreen	0
+	rect		WINDOW_X WINDOW_Y WINDOW_WIDTH WINDOW_HEIGHT
+	style		WINDOW_STYLE_FILLED
+
+	onOpen {
+		COPY_TO_UI
+	}
+
+	onESC {
+		close options_system_etl ;
+		open options
+	}
+
+// Window //
+	WINDOW( "SYSTEM", 90 )
+
+// Display (left) //
+	SUBWINDOW( LEFT_X, DISP_Y, COL_W, DISP_H, "DISPLAY" )
+	MULTI( LEFT_X+2, DISP_Y+ROW(0), COL_W-4, 10, "Resolution:*", .2, 8, "ui_etl_r_mode", cvarFloatList { "Desktop" -2 "Custom" -1 "640x480" 3 "800x600" 4 "1024x768" 6 "1280x1024" 8 "1366x768" 12 "1440x900" 13 "1600x1200" 9 "1680x1050" 14 "1920x1080" 16 "1920x1200" 17 "2560x1440" 18 "2560x1600" 19 "3840x2160" 20 }, "Desktop uses your monitor's current resolution" )
+	NUMERICFIELD( LEFT_X+2, DISP_Y+ROW(1), COL_W-4, 10, "Custom Width:*", .2, 8, "ui_etl_r_customwidth", 5, "Used when Resolution is Custom" )
+	NUMERICFIELD( LEFT_X+2, DISP_Y+ROW(2), COL_W-4, 10, "Custom Height:*", .2, 8, "ui_etl_r_customheight", 5, "Used when Resolution is Custom" )
+	YESNO( LEFT_X+2, DISP_Y+ROW(3), COL_W-4, 10, "Fullscreen:*", .2, 8, "ui_etl_r_fullscreen", "No runs the game in a window" )
+	YESNO( LEFT_X+2, DISP_Y+ROW(4), COL_W-4, 10, "Borderless Window:*", .2, 8, "ui_etl_r_noborder", "Window without a frame; with Desktop resolution it fills the screen without a mode switch" )
+	MULTI( LEFT_X+2, DISP_Y+ROW(5), COL_W-4, 10, "Vertical Sync:*", .2, 8, "ui_etl_r_swapInterval", cvarFloatList { "Off" 0 "On" 1 }, "Locks the frame rate to the monitor refresh rate" )
+	MULTI( LEFT_X+2, DISP_Y+ROW(6), COL_W-4, 10, "Max FPS:", .2, 8, "com_maxfps", cvarFloatList { "43" 43 "60" 60 "76" 76 "100" 100 "125" 125 "142" 142 "166" 166 "200" 200 "250" 250 "333" 333 }, "Frame rate cap (125 is the classic ET setting)" )
+	SLIDER( LEFT_X+2, DISP_Y+ROW(7), COL_W-4, 10, "Brightness:", .2, 8, "r_gamma" 1.3 0.5 3, "Screen brightness (gamma)" )
+
+// Audio (left) //
+	SUBWINDOW( LEFT_X, AUDIO_Y, COL_W, AUDIO_H, "AUDIO" )
+	SLIDER( LEFT_X+2, AUDIO_Y+ROW(0), COL_W-4, 10, "Effects Volume:", .2, 8, "s_volume" .8 0 1, "" )
+	SLIDER( LEFT_X+2, AUDIO_Y+ROW(1), COL_W-4, 10, "Music Volume:", .2, 8, "s_musicvolume" .25 0 1, "" )
+	MULTI( LEFT_X+2, AUDIO_Y+ROW(2), COL_W-4, 10, "Sound Quality:*", .2, 8, "ui_etl_s_khz", cvarFloatList { "22 kHz" 22 "44 kHz" 44 "48 kHz" 48 }, "" )
+
+// Graphics (right) //
+	SUBWINDOW( RIGHT_X, GFX_Y, COL_W, GFX_H, "GRAPHICS" )
+	MULTI( RIGHT_X+2, GFX_Y+ROW(0), COL_W-4, 10, "Texture Detail:*", .2, 8, "ui_etl_r_picmip", cvarFloatList { "Low" 2 "Medium" 1 "High" 0 }, "" )
+	MULTI( RIGHT_X+2, GFX_Y+ROW(1), COL_W-4, 10, "Texture Filter:", .2, 8, "r_textureMode", cvarStrList { "Bilinear"; "GL_LINEAR_MIPMAP_NEAREST"; "Trilinear"; "GL_LINEAR_MIPMAP_LINEAR" }, "" )
+	MULTI( RIGHT_X+2, GFX_Y+ROW(2), COL_W-4, 10, "Anisotropic Filtering:*", .2, 8, "ui_etl_r_aniso", cvarFloatList { "Off" 0 "2x" 2 "4x" 4 "8x" 8 "16x" 16 }, "Sharper textures at an angle" )
+	MULTI( RIGHT_X+2, GFX_Y+ROW(3), COL_W-4, 10, "Anti-Aliasing:*", .2, 8, "ui_etl_r_ext_multisample", cvarFloatList { "Off" 0 "2x" 2 "4x" 4 "8x" 8 }, "Smooths jagged edges (MSAA)" )
+	MULTI( RIGHT_X+2, GFX_Y+ROW(4), COL_W-4, 10, "Geometric Detail:", .2, 8, "r_lodbias", cvarFloatList { "Low" 2 "Medium" 1 "High" 0 }, "" )
+	MULTI( RIGHT_X+2, GFX_Y+ROW(5), COL_W-4, 10, "Dynamic Lights:", .2, 8, "r_dynamiclight", cvarFloatList { "Off" 0 "On" 1 }, "" )
+	YESNO( RIGHT_X+2, GFX_Y+ROW(6), COL_W-4, 10, "Detail Textures:*", .2, 8, "ui_etl_r_detailtextures", "" )
+
+// Network (right) //
+	SUBWINDOW( RIGHT_X, NET_Y, COL_W, NET_H, "NETWORK" )
+	MULTI( RIGHT_X+2, NET_Y+ROW(0), COL_W-4, 10, "Connection Rate:", .2, 8, "rate", cvarFloatList { "Slow" 15000 "Standard" 25000 "Fast" 45000 } cvarListUndefined "Custom", "Data per second the server may send you" )
+	MULTI( RIGHT_X+2, NET_Y+ROW(1), COL_W-4, 10, "Max Packets:", .2, 8, "cl_maxpackets", cvarFloatList { "30" 30 "43" 43 "60" 60 "76" 76 "100" 100 "125" 125 } cvarListUndefined "Custom", "Packets per second you send to the server" )
+	MULTI( RIGHT_X+2, NET_Y+ROW(2), COL_W-4, 10, "Packet Duplication:", .2, 8, "cl_packetdup", cvarFloatList { "Off" 0 "1x" 1 "2x" 2 }, "Resends your movement packets to hide packet loss" )
+
+// Note //
+	LABELWHITE( LEFT_X+2, NOTE_Y, WINDOW_WIDTH-16, 10, "* Applied when you press APPLY (restarts video and sound). Other settings take effect immediately.", .2, ITEM_ALIGN_LEFT, 0, 8 )
+
+// Buttons //
+	BUTTON( 6, WINDOW_HEIGHT-24, .5*(WINDOW_WIDTH-18), 18, "BACK", .3, 14,
+		close options_system_etl ; open options )
+	BUTTON( 6+.5*(WINDOW_WIDTH-18)+6, WINDOW_HEIGHT-24, .5*(WINDOW_WIDTH-18), 18, "APPLY", .3, 14,
+		COPY_FROM_UI ; close options_system_etl ; exec "snd_restart" )
+}

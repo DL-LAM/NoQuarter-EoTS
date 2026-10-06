@@ -1304,6 +1304,13 @@ void UI_LoadMenus( const char *menuFile, qboolean reset ) {
 	Com_DPrintf("UI menu load time = %d milli seconds\n", trap_Milliseconds() - start);
 
 	trap_PC_FreeSource( handle );
+
+	// [NQ EoTS - Options]: add-on pk3s (WolfAdmin menu packs and similar) often ship their
+	// own ui/menus.txt, which replaces NQ's list and would leave out the menus NQ EoTS added.
+	// Load those directly when the active menu list did not.
+	if ( !Menus_FindByName( "options_system_etl" ) ) {
+		UI_ParseMenu( "ui/options_system_etl.menu" );
+	}
 }
 
 void UI_Load() {
@@ -6586,6 +6593,20 @@ void _UI_Init( qboolean inGameLoad ) {
 	int		x;
 
 	UI_RegisterCvars();
+
+	// [NQ EoTS - Options]: flag ET: Legacy clients so OPTIONS > SYSTEM can open the
+	// ET: Legacy settings page (options_system_etl.menu) instead of the 2.60b one.
+	// ET: Legacy reports a 2.60b-style "version" for server browsers, but it also sets
+	// the client-only "etVersion" cvar ("ET Legacy v2.x ..."), which vanilla ET lacks.
+	// CVAR_TEMP: worked out fresh every start, never saved to the config.
+	{
+		char etVersion[MAX_CVAR_VALUE_STRING];
+
+		etVersion[0] = '\0';
+		trap_Cvar_VariableStringBuffer( "etVersion", etVersion, sizeof(etVersion) );
+		trap_Cvar_Register( NULL, "ui_nq_etl", "0", CVAR_TEMP );
+		trap_Cvar_Set( "ui_nq_etl", strstr( etVersion, "ET Legacy" ) ? "1" : "0" );
+	}
 
 	UI_InitMemory();
 	trap_PC_RemoveAllGlobalDefines();
