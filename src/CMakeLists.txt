@@ -105,7 +105,8 @@ set(BG_SRC
 # ==============================================================================
 # LUA 5.1 Library
 # ==============================================================================
-if(WITH_LUA)
+# Lua and LuaSQL are only used by the server module (qagame, XPSave, WolfAdmin)
+if(WITH_LUA AND BUILD_SERVER_MOD)
     set(LUA_SRC
         lua/lua-5.1.5/src/lapi.c
         lua/lua-5.1.5/src/lauxlib.c
@@ -140,6 +141,14 @@ if(WITH_LUA)
     )
     add_library(lua51 SHARED ${LUA_SRC})
     target_include_directories(lua51 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lua/lua-5.1.5/src)
+    if(NOT MSVC)
+        # The Lua C API must stay exported: -fvisibility=hidden (set for all targets above)
+        # hides it, and macOS then fails to link LuaSQL/qagame against lua51.
+        target_compile_options(lua51 PRIVATE -fvisibility=default)
+    endif()
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(lua51 PRIVATE m dl)
+    endif()
     if(WIN32)
         target_compile_definitions(lua51 PRIVATE LUA_BUILD_AS_DLL LUA_CORE LUA_LIB)
         set_target_properties(lua51 PROPERTIES
